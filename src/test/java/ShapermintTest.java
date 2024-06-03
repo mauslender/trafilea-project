@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,8 +14,17 @@ public class ShapermintTest {
 
     @BeforeEach
     public void setUp() {
+
+        // Clear WebDriverManager cache
+        WebDriverManager.chromedriver().clearDriverCache();
+
+        // Use WebDriverManager to setup the correct ChromeDriver version
+        WebDriverManager.chromedriver().browserVersion("125.0.6422.142").setup();
+        
         WebDriverManager.chromedriver().setup();
-        driver = new ChromeDriver();
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--remote-allow-origins=*");  // Example option if needed
+        driver = new ChromeDriver(options);
         driver.manage().window().maximize();
     }
 
@@ -32,6 +42,7 @@ public class ShapermintTest {
 
         // Step 2: Enter the first product within the section "Our Best Sellers"
         HomePage homePage = new HomePage(driver);
+        homePage.waitForAndCloseAd();
         homePage.clickOnBestSellers();
 
         BestSellersPage bestSellersPage = new BestSellersPage(driver);
@@ -40,10 +51,12 @@ public class ShapermintTest {
         // Step 3: Click on the “add to cart” button and proceed to checkout from the cart
         ProductPage productPage = new ProductPage(driver);
         productPage.addToCart();
+        productPage.switchFrame();
         productPage.proceedToCheckout();
 
         // Step 4: Complete email data and shipping Address data
         CheckoutPage checkoutPage = new CheckoutPage(driver);
+        checkoutPage.waitForCheckoutPageToBeLoaded();
         checkoutPage.enterShippingDetails(
                 "qa.mail@gmail.com",
                 "My Name",
@@ -51,12 +64,10 @@ public class ShapermintTest {
                 "123 William Street",
                 "apt 1",
                 "New York",
-                "United States",
                 "New York",
                 "10038",
                 "1234567890"
         );
-        checkoutPage.continueToPayment();
 
         // Step 5: Complete credit card data
         checkoutPage.enterCardDetails("1234 1234 1234 1234", "Name Lastname", "01 / 25", "999");
